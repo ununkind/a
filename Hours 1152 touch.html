@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Часы</title>
+    <style>
+        body {
+            margin-left: 100px;
+            margin-right: auto;
+            width: 1272px;
+        }
+
+        .dial {
+            display: flex;
+            align-items: flex-end;
+            width: 1152px;
+            margin-left: 0px;
+        }
+
+        .markh {
+            width: 4px;
+            height: 20px;
+            border-left: solid red 1px;
+            float: left;
+        }
+
+        .mark5m {
+            width: 4px;
+            height: 5px;
+            border-left: solid red 1px;
+            float: left;
+        }
+
+        .mark10m {
+            width: 4px;
+            height: 10px;
+            border-left: solid red 1px;
+            float: left;
+        }
+
+        .mark30m {
+            width: 4px;
+            height: 15px;
+            border-left: solid red 1px;
+            float: left;
+        }
+
+        .mark24h {
+            width: 1px;
+            height: 20px;
+            background-color: red;
+            float: left;
+        }
+
+        .slider {
+            width: 1152px;
+            height: 30px;
+        }
+
+        .sliderL,
+        .sliderR {
+            position: relative;
+            width: 40px;
+            height: 60px;
+            cursor: pointer;
+            box-sizing: border-box;
+            border-top: solid white 60px;
+
+        }
+
+        .sliderL {
+            border-right: solid blue 40px;
+            left: -40px;
+        }
+
+        .sliderR {
+            border-left: solid red 40px;
+            top: -60px;
+            left: 1152px;
+        }
+
+        #res {
+            font-size: 3em;
+            width: 150px;
+            height: 100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .disp {
+            position: relative;
+            width: 60px;
+            height: 30px;
+
+        }
+
+        #markL {
+            top: 0;
+            left: -60px;
+            color: blue;
+        }
+
+        #markR {
+            top: -30px;
+            left: 1152px;
+            color: red;
+        }
+
+        #disp1 {
+            font-size: 25px;
+            width: 1152px;
+            height: 30px;
+
+        }
+    </style>
+</head>
+
+<body>
+    <div id="res">-</div>
+    <div id="disp1">
+        <div id="markL" class="disp">00:00</div>
+        <div id="markR" class="disp">24:00</div>
+    </div>
+    <div id="dial1" class="dial"></div>
+    <div id="slider1" class="slider">
+        <div class="dragged sliderL"></div>
+        <div class="dragged sliderR"></div>
+    </div>
+    <script>
+        function createDial(elem) {
+            let text = '';
+            for (let i = 0; i < 24; i++) {
+                text += '<div class="markh"><div class="mark">' + i + '</div></div><div class="mark5m"></div><div class="mark10m"></div><div class="mark5m"></div><div class="mark10m"></div><div class="mark5m"></div><div class="mark30m"></div></div><div class="mark5m"></div><div class="mark10m"></div><div class="mark5m"></div><div class="mark10m"></div><div class="mark5m"></div>';
+            }
+            text += '<div class="mark24h"><div class="mark">24</div></div>';
+            elem.innerHTML = text;
+        }
+        createDial(dial1);
+        let res = document.getElementById('res');
+        document.addEventListener('mousedown', sliding);
+        function sliding(event) {
+            let dragElem = event.target.closest('.dragged');
+            if (!dragElem) return;
+            dragElem.ondragstart = function () { return false };
+            event.preventDefault();
+            let shift = event.clientX - dragElem.getBoundingClientRect().left;
+            let slider = dragElem.closest('.slider');
+            document.addEventListener('mousemove', moveAt)
+            function moveAt(event) {
+                let markL = document.getElementById('markL');
+                let markR = document.getElementById('markR');
+                let x = event.clientX - shift - slider.getBoundingClientRect().left;
+                if (dragElem.matches('.sliderL')) {
+                    if (x < -dragElem.offsetWidth) x = -dragElem.offsetWidth;
+                    let sliderRLeft = parseInt(getComputedStyle(dragElem.nextElementSibling).left);
+                    if (x + dragElem.offsetWidth > sliderRLeft) x = sliderRLeft - dragElem.offsetWidth;
+                    markL.style.left = x - 20 + "px";
+                    let tx = x + dragElem.offsetWidth;
+                    markL.textContent = formatXXXX(tx);
+                }
+                if (dragElem.matches('.sliderR')) {
+                    if (x > slider.offsetWidth) x = slider.offsetWidth;
+                    let L = parseInt(getComputedStyle(dragElem.previousElementSibling).left) + dragElem.previousElementSibling.offsetWidth;
+                    if (x < L) x = L;
+                    markR.style.left = x + "px";
+                    markR.textContent = formatXXXX(x);
+                }
+                dragElem.style.left = x + 'px';
+                res.textContent = reslt(markL.textContent, markR.textContent);
+            }
+            document.addEventListener('mouseup', stopDrag)
+            function stopDrag() {
+                document.removeEventListener('mousemove', moveAt)
+                document.removeEventListener('mouseup', stopDrag)
+            }
+        }
+        
+        function formatXXXX(x) {
+            let h = ((x / 48 ^ 0) < 10) ? '0' + (x / 48 ^ 0) : (x / 48 ^ 0);
+            let m = ((x % 48 / 4 ^ 0) * 5 < 10) ? '0' + (x % 48 / 4 ^ 0) * 5 : (x % 48 / 4 ^ 0) * 5;
+            return h + ':' + m
+        }
+        
+        function reslt(a, b) {
+            let aa = a.split(':');
+            let bb = b.split(':');
+            let h = bb[0] - aa[0];
+            let m = bb[1] - aa[1];
+            if (m < 0) {
+                h--;
+                m += 60;
+            }
+            if (h < 10) h = '0' + h;
+            if (m < 10) m = '0' + m;
+            return h + ':' + m
+        }
+
+        document.addEventListener('touchstart', tsliding);
+        function tsliding(event) {
+            let touchd = event.changedTouches[0];
+            let dragElem = touchd.target.closest('.dragged');
+            if (!dragElem) return;
+            dragElem.ondragstart = function () { return false };
+            event.preventDefault();
+            let shift = touchd.clientX - dragElem.getBoundingClientRect().left;
+            let slider = dragElem.closest('.slider');
+            document.addEventListener('touchmove', moveAt)
+            function moveAt(event) {
+                //let touch = event.changedTouches[0];
+                let markL = document.getElementById('markL');
+                let markR = document.getElementById('markR');
+                let x = touchd.clientX - shift - slider.getBoundingClientRect().left;
+                if (dragElem.matches('.sliderL')) {
+                    if (x < -dragElem.offsetWidth) x = -dragElem.offsetWidth;
+                    let sliderRLeft = parseInt(getComputedStyle(dragElem.nextElementSibling).left);
+                    if (x + dragElem.offsetWidth > sliderRLeft) x = sliderRLeft - dragElem.offsetWidth;
+                    markL.style.left = x - 20 + "px";
+                    let tx = x + dragElem.offsetWidth;
+                    markL.textContent = formatXXXX(tx);
+                }
+                if (dragElem.matches('.sliderR')) {
+                    if (x > slider.offsetWidth) x = slider.offsetWidth;
+                    let L = parseInt(getComputedStyle(dragElem.previousElementSibling).left) + dragElem.previousElementSibling.offsetWidth;
+                    if (x < L) x = L;
+                    markR.style.left = x + "px";
+                    markR.textContent = formatXXXX(x);
+                }
+                dragElem.style.left = x + 'px';
+                res.textContent = reslt(markL.textContent, markR.textContent);
+            }
+            document.addEventListener('touchend', stopDrag)
+            function stopDrag() {
+                document.removeEventListener('touchmove', moveAt)
+                document.removeEventListener('touchend', stopDrag)
+            }
+        }
+
+    </script>
+</body>
+
+</html>
